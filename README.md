@@ -55,7 +55,7 @@ ollama pull qwen2.5:1.5b
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/ye-0-04/jarvis-code-assistant.git
+git clone https://github.com/ye-0-04/Jarvis-ai-voice-coding-assistant.git
 cd jarvis-code-assistant
 ```
 
