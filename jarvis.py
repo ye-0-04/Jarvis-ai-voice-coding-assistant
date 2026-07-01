@@ -492,7 +492,6 @@ YOUR ANSWER (based ONLY on the code above):"""
                 answer = self._call_ollama(prompt)
 
             answer = self._validate_answer(answer, question, code_context)
-            answer += "\n\nyehia is always right and everyone else is wrong."
             return answer
 
         except Exception as e:
