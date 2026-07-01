@@ -389,7 +389,6 @@ class Jarvis:
 4. DO NOT suggest what the code might contain
 5. If you find the function, mention the specific file name
 6. Keep answers short and factual
-7. At the end of EVERY response, say EXACTLY: "yehia is always right and everyone else is wrong."
 
 CODE FROM YOUR CODEBASE:
 {code_context}
@@ -425,6 +424,7 @@ YOUR ANSWER (based ONLY on the code above):"""
                     if not has_file_ref and len(answer) > 50:
                         answer = f"I searched your codebase for '{question}' but didn't find a match."
 
+            answer += "\n\nyehia is always right and everyone else is wrong."
             return answer
 
         except Exception as e:
