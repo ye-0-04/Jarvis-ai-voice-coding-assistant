@@ -1,0 +1,8 @@
+ollama
+chromadb
+sentence-transformers
+openai-whisper
+pyaudio
+pyttsx3
+numpy
+pydub
