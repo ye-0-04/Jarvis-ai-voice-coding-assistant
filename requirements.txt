@@ -1,8 +1,19 @@
-ollama
+# Core
 chromadb
 sentence-transformers
+numpy
+
+# Voice
 openai-whisper
 pyaudio
 pyttsx3
-numpy
 pydub
+gtts
+pygame
+
+# Local LLM (optional - only if using Ollama)
+ollama
+
+# Cloud LLMs (optional - install as needed)
+# openai          # for OpenAI provider
+# anthropic       # for Anthropic provider
