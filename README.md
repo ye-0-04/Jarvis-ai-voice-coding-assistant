@@ -1,6 +1,6 @@
 # 🤖 Jarvis - Code Assistant
 
-A voice-activated AI coding assistant that uses **local LLMs** (via Ollama) with **RAG (Retrieval-Augmented Generation)** to search and answer questions about your codebase. Whisper handles speech-to-text, and Google TTS provides voice output.
+A voice-activated AI coding assistant that uses **local or cloud LLMs** with **RAG (Retrieval-Augmented Generation)** to search and answer questions about your codebase. Supports Ollama (local), OpenAI, and Anthropic — switch with one config line. Whisper handles speech-to-text, and Google TTS provides voice output.
 
 ## ✨ Features
 
@@ -8,7 +8,7 @@ A voice-activated AI coding assistant that uses **local LLMs** (via Ollama) with
 |---------|-------------|
 | 🎤 **Voice Control** | Speak naturally — just say "Hey Jarvis" and ask about your code |
 | 🔍 **RAG-Powered Search** | ChromaDB indexes your codebase; Jarvis retrieves relevant context before answering |
-| 🧠 **Local LLM** | Runs entirely offline via Ollama (no API keys, no cloud) |
+| 🧠 **Flexible LLM** | Ollama (local, no API key), OpenAI, or Anthropic — pick your provider |
 | 🔇 **Multiple Listening Modes** | Hybrid (silence detection), fixed duration, or push-to-talk |
 | 🔊 **Voice Response** | Google TTS reads answers aloud |
 | 📊 **Usage Stats** | Track queries, runtime, and indexed code chunks |
@@ -21,8 +21,9 @@ A voice-activated AI coding assistant that uses **local LLMs** (via Ollama) with
 ├───────────┬───────────┬─────────────┬────────────────────┤
 │  🎤 Input │  🧠 Brain │  📚 Memory  │  🔊 Output         │
 ├───────────┼───────────┼─────────────┼────────────────────┤
-│ Whisper   │ Ollama    │ ChromaDB    │ gTTS + pygame      │
-│ (STT)     │ (LLM)     │ (Vector DB) │ (Text-to-Speech)   │
+│ Whisper   │ Ollama /  │ ChromaDB    │ gTTS + pygame      │
+│ (STT)     │ OpenAI /  │ (Vector DB) │ (Text-to-Speech)   │
+│           │ Anthropic │             │                    │
 └───────────┴───────────┴─────────────┴────────────────────┘
 ```
 
@@ -31,13 +32,13 @@ A voice-activated AI coding assistant that uses **local LLMs** (via Ollama) with
 | Dependency | Version | Purpose |
 |-----------|---------|---------|
 | [Python](https://python.org) | 3.10+ | Runtime |
-| [Ollama](https://ollama.ai) | Latest | Local LLM server |
+| [Ollama](https://ollama.ai) | Latest | Local LLM server *(only if using Ollama provider)* |
 | [Git](https://git-scm.com) | Any | Version control |
 | [PortAudio](https://portaudio.com) | v19 | Microphone input (Windows: `pip install pyaudio` handles this) |
 
-### Ollama Models Required
+### Ollama Models Required (local mode only)
 
-Pull these models **before** running Jarvis:
+Pull these models **before** running Jarvis if using the Ollama provider:
 
 ```bash
 # Main reasoning model
@@ -49,6 +50,28 @@ ollama pull nomic-embed-text
 # Fallback model (optional)
 ollama pull qwen2.5:1.5b
 ```
+
+## 🤖 Choosing an AI Provider
+
+Set `AI_PROVIDER` in `jarvis.py` to switch between providers:
+
+| Provider | `AI_PROVIDER` value | Requires | API Key |
+|----------|---------------------|----------|---------|
+| **Ollama** (local) | `"ollama"` | Ollama running locally | None |
+| **OpenAI** | `"openai"` | `pip install openai` | `OPENAI_API_KEY` env var |
+| **Anthropic** | `"anthropic"` | `pip install anthropic` | `ANTHROPIC_API_KEY` env var |
+
+Set your API key as an environment variable:
+
+```bash
+# Windows PowerShell
+$env:OPENAI_API_KEY = "sk-..."
+
+# Linux / macOS
+export OPENAI_API_KEY="sk-..."
+```
+
+The embedding model auto-switches to match your provider (Ollama embedding for local, OpenAI `text-embedding-3-small` for cloud).
 
 ## 🚀 Installation
 
@@ -142,12 +165,28 @@ Set `LISTEN_MODE` in `jarvis.py`:
 All settings are at the top of `jarvis.py`:
 
 ```python
-MAIN_MODEL = "deepseek-coder:1.3b"     # LLM for answers
-EMBEDDING_MODEL = "nomic-embed-text"    # Model for embeddings
-WAKE_WORD = "hey jarvis"                # Wake phrase
-SILENCE_TIMEOUT = 1.2                   # Seconds of silence to stop
-VOLUME_THRESHOLD = 2400                 # Mic sensitivity
-MAX_LISTEN_TIME = 15                    # Max recording seconds
+# ----- AI Provider -----
+AI_PROVIDER = "ollama"           # "ollama", "openai", or "anthropic"
+
+# Ollama (local)
+OLLAMA_MODEL = "deepseek-coder:1.3b"
+OLLAMA_FALLBACK = "qwen2.5:1.5b"
+OLLAMA_EMBEDDING_MODEL = "nomic-embed-text"
+
+# OpenAI
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = "gpt-4o"
+OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
+
+# Anthropic
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022"
+
+# ----- Voice -----
+WAKE_WORD = "hey jarvis"
+SILENCE_TIMEOUT = 1.2            # Seconds of silence to stop
+VOLUME_THRESHOLD = 2400          # Mic sensitivity
+MAX_LISTEN_TIME = 15             # Max recording seconds
 ```
 
 ## 📂 File Structure
@@ -203,16 +242,18 @@ Jarvis falls back to text-only output. Ensure `pygame` and `gTTS` are installed 
 ## 📦 Dependencies
 
 ```
-ollama           # Ollama Python client
-chromadb         # Vector database for RAG
-sentence-transformers  # Embeddings
-openai-whisper   # Speech-to-text
-pyaudio          # Microphone input
-pyttsx3          # Fallback TTS
-numpy            # Audio processing
-pydub            # Audio utilities
-gtts             # Google Text-to-Speech
-pygame           # Audio playback
+chromadb              # Vector database for RAG
+sentence-transformers # Embeddings
+openai-whisper        # Speech-to-text
+pyaudio               # Microphone input
+pyttsx3               # Fallback TTS
+numpy                 # Audio processing
+pydub                 # Audio utilities
+gtts                  # Google Text-to-Speech
+pygame                # Audio playback
+ollama                # Local LLM (optional)
+openai                # Cloud LLM (optional)
+anthropic             # Cloud LLM (optional)
 ```
 
 ## 🤝 Contributing
@@ -230,6 +271,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgments
 
 - [Ollama](https://ollama.ai) for local LLM inference
+- [OpenAI](https://openai.com) for cloud LLM API
+- [Anthropic](https://anthropic.com) for cloud LLM API
 - [OpenAI Whisper](https://github.com/openai/whisper) for speech recognition
 - [ChromaDB](https://www.trychroma.com/) for vector storage
 - [gTTS](https://github.com/pndurette/gTTS) for text-to-speech
